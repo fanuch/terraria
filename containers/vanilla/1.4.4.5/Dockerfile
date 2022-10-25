@@ -1,5 +1,8 @@
 FROM mono:slim
 
+# Current latest version
+ARG VERSION=latest
+
 # Update and install needed utils
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -10,12 +13,19 @@ RUN apt-get update && \
 # fix for favorites.json error
 RUN favorites_path="/root/My Games/Terraria" && mkdir -p "$favorites_path" && echo "{}" > "$favorites_path/favorites.json"
 
-# Download and install Vanilla Server
-# ENV VANILLA_VERSION=1445
+RUN \
+if [ $VERSION = "latest" ]; then 
+    curl -s https://www.terraria.org/api/get/dedicated-servers-names | \
+        grep -o 'terraria-server-[^"]*' | \
+        head -1 | \
+        tee version.txt;
+else;
+     echo $VERSION > version.txt
+fi
 
 RUN mkdir /tmp/terraria && \
     cd /tmp/terraria && \
-    curl -sL https://www.terraria.org/api/download/pc-dedicated-server/terraria-server-1445.zip --output terraria-server.zip && \
+    curl -sL https://www.terraria.org/api/download/pc-dedicated-server/$(cat version.txt) --output terraria-server.zip && \
     unzip -q terraria-server.zip && \
     mv */Linux /vanilla && \
     mv */Windows/serverconfig.txt /vanilla/serverconfig-default.txt && \
